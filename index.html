@@ -22,8 +22,11 @@ body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 system-ui,-appl
 .chk{list-style:none;padding:0!important;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}.chk li{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
 .am{font-size:1.5rem;display:block}
 footer{text-align:center;padding:24px;color:var(--mu);font-size:.85rem;border-top:1px solid var(--bd);padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.lf{display:flex;gap:8px;flex-wrap:wrap}.lf input{flex:1;min-width:200px;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px}.lf button{border:0;font:inherit;cursor:pointer}
+.tw{overflow-x:auto;margin-top:10px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--bd);white-space:nowrap}th{color:var(--mu);font-weight:600}
+.s-paid{color:#1d7a46}.s-due{color:#b25e00}.s-overdue{color:#b3261e}@media (prefers-color-scheme:dark){.s-paid{color:#5bc48a}.s-due{color:#e0a24d}.s-overdue{color:#f08a82}}
 </style></head><body>
-<header class="top"><b id="sn"></b><nav><a href="#about">About</a><a href="#why">Why us</a><a href="#news">Announcements</a><a href="#rules">House rules</a><a href="#requests">Requests</a><a class="btn" href="#contact">Contact</a></nav></header>
+<header class="top"><b id="sn"></b><nav><a href="#about">About</a><a href="#why">Why us</a><a href="#news">Announcements</a><a href="#rules">House rules</a><a href="#requests">Requests</a><a href="#login">Tenant login</a><a class="btn" href="#contact">Contact</a></nav></header>
 <section class="hero"><div class="wrap"><h1 id="hn"></h1><p id="tg"></p><a class="btn" href="#contact">Inquire about a room</a><a class="btn ghost" href="#requests">Tenant requests</a></div></section>
 <section id="about" class="wrap sec"><h2>About Us</h2><p id="ab"></p><div class="grid"><div class="card"><h3>Features</h3><ul id="ft1"></ul></div><div class="card"><h3>Perfect For</h3><ul id="pf"></ul></div></div><div class="grid" id="ph" style="margin-top:12px"></div></section>
 <section id="why" class="wrap sec"><h2>Why Choose EVELAN Residences?</h2><ul class="chk" id="wy"></ul><h2 style="margin-top:28px">Amenities</h2><div class="grid" id="am"></div></section>
@@ -31,6 +34,7 @@ footer{text-align:center;padding:24px;color:var(--mu);font-size:.85rem;border-to
 <section id="rules" class="wrap sec"><h2>House Rules</h2><div class="card"><ol id="ru"></ol></div></section>
 <section id="requests" class="wrap sec"><h2>Tenant Requests</h2><div class="grid" id="fm"></div></section>
 <section id="contact" class="wrap sec"><h2>Contact &amp; Inquiries</h2><div class="card"><p id="cq"></p><div class="pre" id="ct"></div></div></section>
+<section id="login" class="wrap sec"><h2>Tenant Login</h2><div class="card"><p class="mu">Enter the email address you gave the manager to see your monthly dues.</p><form id="lf" class="lf"><input id="em" type="email" required placeholder="you@email.com" autocomplete="email"><button class="btn" type="submit">View my dues</button></form><div id="lr"></div></div></section>
 <footer id="fo"></footer>
 <script>
 /* ===== EDIT THIS BLOCK ONLY ===== */
@@ -54,6 +58,7 @@ const SITE={
  contact:"Phone: 0976 223 0105\nOffice Hours: Monday to Sunday, 6:00 AM \u2013 8:00 PM\nAddress: Hillside, Talamban, Cebu City",
  photos:[] /* e.g. ["photos/room1.jpg","photos/front.jpg"] */
 };
+const DUES_URL="https://script.google.com/macros/s/AKfycbyWaSoOHqrt-F3CCuXFeT8Oqram2fkphuIKYdnFb6w-KsJSnscqRWqT7qEAM2TkgDg/exec"; /* paste your Google Apps Script web app URL here (starts with https://) */
 /* ================================= */
 const $=s=>document.querySelector(s);
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt)e.textContent=txt;return e};
@@ -69,4 +74,18 @@ SITE.forms.forEach(f=>{const c=el('div','card');c.append(el('h3','',f.label),el(
  if(/^https:\/\//.test(f.url)){const a=el('a','btn','Open form');a.href=f.url;a.target='_blank';a.rel='noopener';c.append(a)}else c.append(el('span','mu','Form link coming soon.'));
  $('#fm').append(c)});
 SITE.photos.forEach(p=>{if(/^[\w\-\/.]+\.(jpe?g|png|webp|gif)$/i.test(p)){const i=el('img');i.src=p;i.alt='';i.loading='lazy';$('#ph').append(i)}});
+$('#lf').addEventListener('submit',async e=>{e.preventDefault();const out=$('#lr');out.replaceChildren();
+ if(!/^https:\/\//.test(DUES_URL)){out.append(el('p','mu','Tenant login isn\u2019t set up yet.'));return}
+ out.append(el('p','mu','Checking\u2026'));
+ try{const r=await fetch(DUES_URL+'?email='+encodeURIComponent($('#em').value.trim()));const d=await r.json();out.replaceChildren();
+  if(!d.ok){out.append(el('p','mu','We couldn\u2019t find that email. Please check it or contact the manager.'));return}
+  out.append(el('h3','','Hello, '+d.name));
+  if(!d.dues.length){out.append(el('p','mu','No dues recorded yet.'));return}
+  const tb=el('table'),hr=el('tr');['Month','Item','Amount','Status','Date paid'].forEach(x=>hr.append(el('th','',x)));tb.append(hr);
+  d.dues.forEach(x=>{const tr=el('tr');const amt=/^[\d.,]+$/.test(x.amount)?'\u20b1'+x.amount:x.amount;
+   [x.month,x.item,amt].forEach(v=>tr.append(el('td','',v)));
+   const st=['paid','due','overdue'].includes(x.status)?x.status:'';tr.append(el('td','s-'+st,x.status));tr.append(el('td','',x.paid||'\u2014'));tb.append(tr)});
+  const w=el('div','tw');w.append(tb);out.append(w);
+ }catch(err){out.replaceChildren(el('p','mu','Something went wrong. Please try again later.'))}
+});
 </script></body></html>
