@@ -29,11 +29,15 @@ footer{text-align:center;padding:24px;color:var(--mu);font-size:.85rem;border-to
 
 .f{display:grid;gap:10px;max-width:560px}.f select,.f textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px;width:100%}.f textarea{min-height:110px}.f button{border:0;font:inherit;cursor:pointer;justify-self:start}
 td.d{white-space:normal;min-width:180px}
+.qr{max-width:240px;width:100%;border-radius:12px;background:#fff;display:block;margin:10px 0}
 </style></head><body>
 <header class="top"><b>EVELAN Residences</b><nav><a href="index.html">Home</a><a class="btn" href="#" id="out">Sign out</a></nav></header>
 <main class="wrap sec"><h2 id="hi">Loading\u2026</h2><div id="app"></div></main>
 <script>
 const DUES_URL="https://script.google.com/macros/s/AKfycbyWaSoOHqrt-F3CCuXFeT8Oqram2fkphuIKYdnFb6w-KsJSnscqRWqT7qEAM2TkgDg/exec";
+/* ===== EDIT: payment QR. Upload your QR images to the same GitHub folder with these file names ===== */
+const PAY={methods:[{name:"Maya",qr:"qr-maya.jpeg"},{name:"BPI",qr:"qr-bpi.jpg"}],text:"Prefer to pay online? Choose Maya or BPI and scan its QR code below with your e-wallet or banking app, enter the amount due, and send your proof of payment (screenshot or reference number) to the manager at 0976 223 0105. Your status is updated once payment is confirmed."};
+/* ================================================================================================ */
 const $=s=>document.querySelector(s);
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt)e.textContent=txt;return e};
 const email=sessionStorage.getItem('evl');
@@ -51,6 +55,10 @@ function reqList(list){const c=$('#rl');c.replaceChildren();
  if(!list.length){c.append(el('p','mu','No requests yet.'));return}
  c.append(table(['Date','Type','Details','Status'],list.map(x=>{const tr=el('tr');const done=x.status.toLowerCase()==='done';
   tr.append(cell(x.date),cell(x.type),cell(x.details,'d'),cell(x.status,done?'s-paid':'s-due'));return tr})))}
+function pay(){const c=el('div','card');c.append(el('h3','','Pay online'),el('p','mu',PAY.text));
+ const g=el('div','grid');
+ PAY.methods.forEach(m=>{const b=el('div');b.append(el('b','',m.name));const i=el('img','qr');i.src=m.qr;i.alt=m.name+' payment QR code';i.onerror=()=>b.remove();b.append(i);g.append(b)});
+ c.append(g);return c}
 function form(){const c=el('div','card');c.append(el('h3','','Send a request'));
  c.append(el('p','mu','Internet installation: request installation assistance or approval; the landlord or landlady reviews requests within 1\u20132 business days. Maintenance: report plumbing, electrical, furniture, internet, or facility concerns; urgent issues are prioritized.'));
  const f=el('form','f'),ty=el('select'),tx=el('textarea'),b=el('button','btn','Submit request'),msg=el('div','mu');
@@ -70,7 +78,7 @@ function form(){const c=el('div','card');c.append(el('h3','','Send a request'));
   if(!d.ok){leave();return}
   $('#hi').textContent='Hello, '+d.name;
   const a=$('#app'),rc=el('div','card');rc.append(el('h3','','Your requests'),el('div','','' ));rc.lastChild.id='rl';
-  a.append(dues(d.dues),form(),rc);reqList(d.requests);
+  a.append(dues(d.dues),pay(),form(),rc);reqList(d.requests);
  }catch(err){$('#hi').textContent='Something went wrong. Please refresh the page.'}
 })();
 </script></body></html>
